@@ -137,6 +137,7 @@ int numPasosDart = 0;
 
 // Var animate helicopter
 float rotHelHelY = 0.0;
+float posHeli = 0.0;
 
 // Var animate lambo dor
 int stateDoor = 0;
@@ -899,6 +900,7 @@ void applicationLoop() {
 
 		// Helicopter
 		glm::mat4 modelMatrixHeliChasis = glm::mat4(modelMatrixHeli);
+		modelMatrixHeliChasis = glm::translate(modelMatrixHeliChasis, glm::vec3(0.0, -posHeli, 0.0));
 		modelHeliChasis.render(modelMatrixHeliChasis);
 
 		glm::mat4 modelMatrixHeliHeli = glm::mat4(modelMatrixHeliChasis);
@@ -1052,6 +1054,8 @@ void applicationLoop() {
 
 		// Constantes de animaciones
 		rotHelHelY += 0.5;
+		if (posHeli < 10)
+			posHeli += 0.001;
 
 		/*******************************************
 		 * State machines
