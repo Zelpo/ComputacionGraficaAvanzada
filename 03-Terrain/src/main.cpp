@@ -80,8 +80,9 @@ Model modelDartLegoRightLeg;
 // Model animate instance
 // Mayow
 Model mayowModelAnimate;
+Model cawboyModelAnimate;
 // Terrain model instance
-Terrain terrain(-1, -1, 200, 8, "../Textures/heightmap.png");
+Terrain terrain(-1, -1, 150, 25, "../Textures/testHeightMap.png");
 
 GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID;
 GLuint skyboxTextureID;
@@ -112,6 +113,7 @@ glm::mat4 modelMatrixLambo = glm::mat4(1.0);
 glm::mat4 modelMatrixAircraft = glm::mat4(1.0);
 glm::mat4 modelMatrixDart = glm::mat4(1.0f);
 glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
+glm::mat4 modelMatrixCawboy = glm::mat4(1.0f);
 
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
 int modelSelected = 0;
@@ -273,6 +275,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	//Mayow
 	mayowModelAnimate.loadModel("../models/mayow/personaje2.fbx");
 	mayowModelAnimate.setShader(&shaderMulLighting);
+
+	cawboyModelAnimate.loadModel("../models/cowboy/Character Running.fbx");
+	cawboyModelAnimate.setShader(&shaderMulLighting);
 
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
 
@@ -690,6 +695,8 @@ void applicationLoop() {
 	modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(13.0f, 0.05f, -5.0f));
 	modelMatrixMayow = glm::rotate(modelMatrixMayow, glm::radians(-90.0f), glm::vec3(0, 1, 0));
 
+	modelMatrixCawboy = glm::translate(modelMatrixCawboy, glm::vec3(-3.0, 0.0, 7.0));
+
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
 	keyFramesDartJoints = getKeyRotFrames(fileName);
@@ -754,14 +761,14 @@ void applicationLoop() {
 		/*******************************************
 		 * Terrain Cesped
 		 *******************************************/
-		glm::mat4 modelCesped = glm::mat4(1.0);
+		/*glm::mat4 modelCesped = glm::mat4(1.0);
 		modelCesped = glm::translate(modelCesped, glm::vec3(0.0, 0.0, 0.0));
-		modelCesped = glm::scale(modelCesped, glm::vec3(200.0, 0.001, 200.0));
+		modelCesped = glm::scale(modelCesped, glm::vec3(200.0, 0.001, 200.0));*/
 		// Se activa la textura del agua
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureCespedID);
-		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(80, 80)));
-		terrain.setPosition(glm::vec3(100, 0, 100));
+		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(150, 150)));
+		terrain.setPosition(glm::vec3(75, 0, 75));
 		terrain.render();
 		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(0, 0)));
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -869,6 +876,12 @@ void applicationLoop() {
 		modelMatrixMayowBody = glm::scale(modelMatrixMayowBody, glm::vec3(0.021, 0.021, 0.021));
 		mayowModelAnimate.setAnimationIndex(0);
 		mayowModelAnimate.render(modelMatrixMayowBody);
+
+		modelMatrixCawboy[3][1] = terrain.getHeightTerrain(modelMatrixCawboy[3][0], modelMatrixCawboy[3][2]);
+		glm::mat4 cawboyModelBody = glm::mat4(modelMatrixCawboy);
+		cawboyModelBody = glm::scale(cawboyModelBody, glm::vec3(0.002, 0.002, 0.002));
+		cawboyModelAnimate.setAnimationIndex(0);
+		cawboyModelAnimate.render(cawboyModelBody);
 
 		/*******************************************
 		 * Skybox
