@@ -88,6 +88,7 @@ Model modelLampPost2;
 // Model animate instance
 // Mayow
 Model mayowModelAnimate;
+Model cowboyModelAnimate;
 // Terrain model instance
 Terrain terrain(-1, -1, 200, 8, "../Textures/heightmap.png");
 
@@ -121,6 +122,7 @@ glm::mat4 modelMatrixLambo = glm::mat4(1.0);
 glm::mat4 modelMatrixAircraft = glm::mat4(1.0);
 glm::mat4 modelMatrixDart = glm::mat4(1.0f);
 glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
+glm::mat4 modelMatrixCowBoy = glm::mat4(1.0f);
 
 int animationIndex = 1;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
@@ -303,6 +305,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	//Mayow
 	mayowModelAnimate.loadModel("../models/mayow/personaje2.fbx");
 	mayowModelAnimate.setShader(&shaderMulLighting);
+	//Cowboy
+	cowboyModelAnimate.loadModel("../models/cowboy/Character Running.fbx");
+	cowboyModelAnimate.setShader(&shaderMulLighting);
 
 	camera->setPosition(glm::vec3(0.0, 0.0, 10.0));
 	camera->setDistanceFromTarget(distanceFromTarget);
@@ -700,6 +705,7 @@ void destroy() {
 	modelLamp1.destroy();
 	modelLamp2.destroy();
 	modelLampPost2.destroy();
+	cowboyModelAnimate.destroy();
 
 	// Custom objects animate
 	mayowModelAnimate.destroy();
@@ -784,7 +790,8 @@ bool processInput(bool continueApplication) {
 	if (enableCountSelected && glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS){
 		enableCountSelected = false;
 		modelSelected++;
-		if(modelSelected > 2)
+		camera->setAngleAroundTarget(0.0f);
+		if(modelSelected > 3)
 			modelSelected = 0;
 		if(modelSelected == 1)
 			fileName = "../animaciones/animation_dart_joints.txt";
@@ -884,7 +891,18 @@ bool processInput(bool continueApplication) {
 		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0, 0, -0.02));
 		animationIndex = 0;
 	}
-
+	//Cowboy animate model
+	if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+		modelMatrixCowBoy = glm::rotate(modelMatrixCowBoy, glm::radians(1.0f), glm::vec3(0, 1, 0));
+	}
+	else if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+		modelMatrixCowBoy = glm::rotate(modelMatrixCowBoy, glm::radians(-1.0f), glm::vec3(0, 1, 0));
+	}if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+		modelMatrixCowBoy = glm::translate(modelMatrixCowBoy, glm::vec3(0, 0, 0.02));
+	}
+	else if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+		modelMatrixCowBoy = glm::translate(modelMatrixCowBoy, glm::vec3(0, 0, -0.02));
+	}
 	glfwPollEvents();
 	return continueApplication;
 }
@@ -909,6 +927,8 @@ void applicationLoop() {
 
 	modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(13.0f, 0.05f, -5.0f));
 	modelMatrixMayow = glm::rotate(modelMatrixMayow, glm::radians(-90.0f), glm::vec3(0, 1, 0));
+
+	modelMatrixCowBoy = glm::translate(modelMatrixCowBoy, glm::vec3(13.0f, 0.05f, 5.0f));
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -940,6 +960,11 @@ void applicationLoop() {
 			axis = glm::axis(glm::quat_cast(modelMatrixDart));
 			angleTarget = glm::angle(glm::quat_cast(modelMatrixDart));
 			target = modelMatrixDart[3];
+		}
+		else if(modelSelected == 3){
+			axis = glm::axis(glm::quat_cast(modelMatrixCowBoy));
+			angleTarget = glm::angle(glm::quat_cast(modelMatrixCowBoy));
+			target = modelMatrixCowBoy[3];
 		}
 		else{
 			axis = glm::axis(glm::quat_cast(modelMatrixMayow));
@@ -1220,6 +1245,11 @@ void applicationLoop() {
 		modelMatrixMayowBody = glm::scale(modelMatrixMayowBody, glm::vec3(0.021, 0.021, 0.021));
 		mayowModelAnimate.setAnimationIndex(animationIndex);
 		mayowModelAnimate.render(modelMatrixMayowBody);
+
+		modelMatrixCowBoy[3][1] = terrain.getHeightTerrain(modelMatrixCowBoy[3][0], modelMatrixCowBoy[3][2]);
+		glm::mat4 modelMatrixCowBoyBody = glm::mat4(modelMatrixCowBoy);
+		modelMatrixCowBoyBody = glm::scale(modelMatrixCowBoyBody, glm::vec3(0.0025, 0.0025, 0.0025));
+		cowboyModelAnimate.render(modelMatrixCowBoyBody);
 
 		/*******************************************
 		 * Skybox
