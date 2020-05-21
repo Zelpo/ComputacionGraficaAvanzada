@@ -1259,18 +1259,18 @@ void applicationLoop() {
 		/*******************************************
 		 * Skybox
 		 *******************************************/
-		/*GLint oldCullFaceMode;
-		GLint oldDepthFuncMode;
-		// deshabilita el modo del recorte de caras ocultas para ver las esfera desde adentro
-		glGetIntegerv(GL_CULL_FACE_MODE, &oldCullFaceMode);
-		glGetIntegerv(GL_DEPTH_FUNC, &oldDepthFuncMode);
-		shaderSkybox.setFloat("skybox", 0);
-		glCullFace(GL_FRONT);
-		glDepthFunc(GL_LEQUAL);
-		glActiveTexture(GL_TEXTURE0);
-		skyboxSphere.render();
-		glCullFace(oldCullFaceMode);
-		glDepthFunc(oldDepthFuncMode);*/
+		//GLint oldCullFaceMode;
+		//GLint oldDepthFuncMode;
+		//// deshabilita el modo del recorte de caras ocultas para ver las esfera desde adentro
+		//glGetIntegerv(GL_CULL_FACE_MODE, &oldCullFaceMode);
+		//glGetIntegerv(GL_DEPTH_FUNC, &oldDepthFuncMode);
+		//shaderSkybox.setFloat("skybox", 0);
+		//glCullFace(GL_FRONT);
+		//glDepthFunc(GL_LEQUAL);
+		//glActiveTexture(GL_TEXTURE0);
+		//skyboxSphere.render();
+		//glCullFace(oldCullFaceMode);
+		//glDepthFunc(oldDepthFuncMode);
 
 		/*******************************************
 		 * Creacion de colliders

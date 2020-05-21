@@ -68,7 +68,7 @@ Shader shaderParticlesFountain;
 Shader shaderParticlesFire;
 //Shader para visualizar el buffer de profundidad
 Shader shaderViewDepth;
-//Shader para dibujar el buffer de profunidad
+//Shader para dibujar el buffer de profundidad
 Shader shaderDepth;
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
@@ -77,6 +77,7 @@ float distanceFromTarget = 7.0;
 Sphere skyboxSphere(20, 20);
 Box boxCollider;
 Sphere sphereCollider(10, 10);
+// Caja donde se colocara la textura
 Box boxViewDepth;
 
 // Models complex instances
@@ -460,6 +461,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	skyboxSphere.setShader(&shaderSkybox);
 	skyboxSphere.setScale(glm::vec3(100.0f, 100.0f, 100.0f));
 
+	boxViewDepth.init();
+	boxViewDepth.setShader(&shaderViewDepth);
+
 	boxCollider.init();
 	boxCollider.setShader(&shader);
 	boxCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
@@ -467,9 +471,6 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	sphereCollider.init();
 	sphereCollider.setShader(&shader);
 	sphereCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
-
-	boxViewDepth.init();
-	boxViewDepth.setShader(&shaderViewDepth);
 
 	modelRock.loadModel("../models/rock/rock.obj");
 	modelRock.setShader(&shaderMulLighting);
@@ -983,28 +984,24 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	 *******************************************/
 	initParticleBuffersFire();
 
-	/*******************************************
-	 * Inicializacion del framebuffer para
-	 * almacenar el buffer de profunidadad
-	 *******************************************/
-	glGenFramebuffers(1, &depthMapFBO);
-	glGenTextures(1, &depthMap);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-				 SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	/*********************************************
+	 * Inicializacion del framebuffer para almacenar el buffer de profundidad
+	 *********************************************/
+	glGenFramebuffers(1, &depthMapFBO); // Genera un framebuffer
+	glGenTextures(1, &depthMap); // Genera una textura
+	glBindTexture(GL_TEXTURE_2D, depthMap); // Enlazar la textura
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // Configuracion de filtering para minimizado y maximizado de la textura
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);*/
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-	glDrawBuffer(GL_NONE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // Configuracion del wrapping para que se repita vert y hor la textura
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float boarderColor [] = {1.0, 1.0, 1.0, 1.0};
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, boarderColor);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO); // Se utiliza el framebuffer que se creo previamente
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0); // Se agrega la textura 2D al frame buffer
+	glDrawBuffer(GL_NONE); // No es un buffer de escritura ni lectura
 	glReadBuffer(GL_NONE);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); // Se deja de utilizar el frame buffer
 }
 
 void destroy() {
@@ -1346,15 +1343,14 @@ void applicationLoop() {
 		camera->updateCamera();
 		view = camera->getViewMatrix();
 
-		// Projection light shadow mapping
+		// Matriz de proyeccion para el shadow mapping (mapeos de sombras)
 		glm::mat4 lightProjection, lightView;
 		glm::mat4 lightSpaceMatrix;
-		float near_plane = 0.1f, far_plane = 20.0f;
-		//lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
-		lightProjection = glm::ortho(-25.0f, 25.0f, -25.0f, 25.0f, near_plane, far_plane);
-		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+		float near_plane = 0.1f, far_plane = 20.0;
+		lightProjection = glm::ortho(-25.0f, 25.0f, -25.0f, 25.0f, near_plane, far_plane); // Se crea una proyeccion ortogonal
+		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0)); // Se crea una matriz de la camara desde la posicion de la luz (10, 10, 0) al origen
 		lightSpaceMatrix = lightProjection * lightView;
-		shaderDepth.setMatrix4("lightSpaceMatrix", 1, false, glm::value_ptr(lightSpaceMatrix));
+		shaderDepth.setMatrix4("", 1, false, glm::value_ptr(lightSpaceMatrix)); // Enviar la matriz multiplicada al shader que realiza el render de la luz de la escena
 
 		// Settea la matriz de vista y projection al shader con solo color
 		shader.setMatrix4("projection", 1, false, glm::value_ptr(projection));
@@ -1370,15 +1366,15 @@ void applicationLoop() {
 					glm::value_ptr(projection));
 		shaderMulLighting.setMatrix4("view", 1, false,
 				glm::value_ptr(view));
-		shaderMulLighting.setMatrix4("lightSpaceMatrix", 1, false,
-				glm::value_ptr(lightSpaceMatrix));
+		shaderMulLighting.setMatrix4("lightSpaceMatrix", 1, false, glm::value_ptr(lightSpaceMatrix)); // Envia la matriz para el render desde el punto de vista de la luz
+
 		// Settea la matriz de vista y projection al shader con multiples luces
 		shaderTerrain.setMatrix4("projection", 1, false,
 					glm::value_ptr(projection));
 		shaderTerrain.setMatrix4("view", 1, false,
 				glm::value_ptr(view));
-		shaderTerrain.setMatrix4("lightSpaceMatrix", 1, false,
-				glm::value_ptr(lightSpaceMatrix));
+		shaderTerrain.setMatrix4("lightSpaceMatrix", 1, false, glm::value_ptr(lightSpaceMatrix)); // Envia la matriz para el render desde el punto de vista de la luz
+
 		// Settea la matriz de vista y projection al shader para el fountain
 		shaderParticlesFountain.setMatrix4("projection", 1, false,
 					glm::value_ptr(projection));
@@ -1492,27 +1488,25 @@ void applicationLoop() {
 		}
 
 		/*******************************************
-		 * 1.- We render the depth buffer
+		 * 1.- We render the depth buffer, desde el punto de vista de la luz
 		 *******************************************/
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		// render scene from light's point of view
-		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		glCullFace(GL_FRONT);
-		prepareDepthScene();
-		renderScene(false);
-		glCullFace(GL_BACK);
+		// Render de la escena desde la posicion de la luz
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT); // Puerto de vista de las dimensiones de la textura
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO); // Se utiliza el frame buffer creado
+		glClear(GL_DEPTH_BUFFER_BIT); // Limpiamos el buffer de color
+		glCullFace(GL_FRONT); // Se dibujan las caras traseras de la geometria
+		prepareDepthScene(); // Preparar la escena para el render de la profundidad (Settear el shader de profundidad)
+		renderScene(false); // Render de la escena completa desde la posicion de la luz
+		glCullFace(GL_BACK); // Se regresa el cull face a normalidad
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		/*******************************************
 		 * Debug to view the texture view map
 		 *******************************************/
 		// reset viewport
-		/*glViewport(0, 0, screenWidth, screenHeight);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		// render Depth map to quad for visual debugging
+		/*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shaderViewDepth.setMatrix4("projection", 1, false, glm::value_ptr(glm::mat4(1.0)));
 		shaderViewDepth.setMatrix4("view", 1, false, glm::value_ptr(glm::mat4(1.0)));
 		shaderViewDepth.setFloat("near_plane", near_plane);

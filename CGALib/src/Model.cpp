@@ -90,7 +90,15 @@ void Model::loadModel(const std::string & path) {
 			pow(this->aabb.mins.x - this->aabb.maxs.x, 2)
 					+ pow(this->aabb.mins.y - this->aabb.maxs.y, 2)
 					+ pow(this->aabb.mins.z - this->aabb.maxs.z, 2)) / 2.0f;
-
+	/*if (abs(this->aabb.mins.x - this->aabb.maxs.x) > abs(this->aabb.mins.y - this->aabb.maxs.y) 
+		&& abs(this->aabb.mins.x - this->aabb.maxs.x) > abs(this->aabb.mins.z - this->aabb.maxs.z))
+			this->sbb.ratio = abs(this->aabb.mins.x - this->aabb.maxs.x) / 2.0f;
+	else if (abs(this->aabb.mins.y - this->aabb.maxs.y) > abs(this->aabb.mins.x - this->aabb.maxs.x) 
+		&& abs(this->aabb.mins.y - this->aabb.maxs.y) > abs(this->aabb.mins.z - this->aabb.maxs.z))
+			this->sbb.ratio = abs(this->aabb.mins.y - this->aabb.maxs.y) / 2.0f;
+	else if (abs(this->aabb.mins.z - this->aabb.maxs.z) > abs(this->aabb.mins.x - this->aabb.maxs.x) 
+		&& abs(this->aabb.mins.z - this->aabb.maxs.z) > abs(this->aabb.mins.y - this->aabb.maxs.y))
+			this->sbb.ratio = abs(this->aabb.mins.z - this->aabb.maxs.z) / 2.0f;*/
 
 	// Se crea la obb
 	this->obb.c = this->sbb.c;

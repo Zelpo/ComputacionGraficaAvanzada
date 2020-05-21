@@ -187,7 +187,7 @@ std::map<std::string, glm::vec3> blendingUnsorted = {
 		{"lambo", glm::vec3(23.0, 0.0, 0.0)},
 		{"heli", glm::vec3(5.0, 10.0, -5.0)},
 		{"fountain", glm::vec3(5.0, 0.0, -40.0)},
-		{"fire", glm::vec3(0.0, 0.0, 7.0)}
+		{"fire", glm::vec3(-10.0, 0.0, 5.0)}
 };
 
 double deltaTime;
@@ -200,6 +200,7 @@ GLuint nParticles = 8000;
 double currTimeParticlesAnimation, lastTimeParticlesAnimation;
 
 // Definition for the particle system fire
+// Declaracion de las particulas de fuego
 GLuint initVelFire, startTimeFire;
 GLuint VAOParticlesFire;
 GLuint nParticlesFire = 2000;
@@ -207,7 +208,8 @@ GLuint posBuf[2], velBuf[2], age[2];
 GLuint particleArray[2];
 GLuint feedback[2];
 GLuint drawBuf = 1;
-float particleSize = 0.5, particleLifetime = 3.0;
+// Tamaño de la particula y el tiempo de vida
+float particleSize = 0.5, particleLifetime = 6.0;
 double currTimeParticlesAnimationFire, lastTimeParticlesAnimationFire;
 
 // Colliders
@@ -289,6 +291,7 @@ void initParticleBuffers() {
 	glBindVertexArray(0);
 }
 
+// Inicializacion de los buffers de las particulas de fuego
 void initParticleBuffersFire() {
 	// Generate the buffers
 	glGenBuffers(2, posBuf);    // position buffers
@@ -296,6 +299,7 @@ void initParticleBuffersFire() {
 	glGenBuffers(2, age);       // age buffers
 
 	// Allocate space for all buffers
+	// Se cargan los datos de la particula en memoria, la transferencia de memoria sera dinamica (los datos tambien) GL_DYNAMIC_COPY
 	int size = nParticlesFire * sizeof(GLfloat);
 	glBindBuffer(GL_ARRAY_BUFFER, posBuf[0]);
 	glBufferData(GL_ARRAY_BUFFER, 3 * size, 0, GL_DYNAMIC_COPY);
@@ -311,6 +315,7 @@ void initParticleBuffersFire() {
 	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_COPY);
 
 	// Fill the first age buffer
+	// Inicializacion de la edad de la particula
 	std::vector<GLfloat> initialAge(nParticlesFire);
 	float rate = particleLifetime / nParticlesFire;
 	for(unsigned int i = 0; i < nParticlesFire; i++ ) {
@@ -320,6 +325,7 @@ void initParticleBuffersFire() {
 	}
 	// Shuffle them for better looking results
 	//Random::shuffle(initialAge);
+	// Se mezclan aleatoriamente las particulas ------- Revisar posteriormente
 	auto rng = std::default_random_engine {};
 	std::shuffle(initialAge.begin(), initialAge.end(), rng);
 	glBindBuffer(GL_ARRAY_BUFFER, age[0]);
@@ -331,6 +337,7 @@ void initParticleBuffersFire() {
 	glGenVertexArrays(2, particleArray);
 
 	// Set up particle array 0
+	// Se configuran los atributos de los vertices de las particulas
 	glBindVertexArray(particleArray[0]);
 	glBindBuffer(GL_ARRAY_BUFFER, posBuf[0]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -363,6 +370,7 @@ void initParticleBuffersFire() {
 	// Setup the feedback objects
 	glGenTransformFeedbacks(2, feedback);
 
+	// Se crean las transformaciones de retroalimentacion
 	// Transform feedback 0
 	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, feedback[0]);
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, posBuf[0]);
@@ -438,6 +446,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	shaderMulLighting.initialize("../Shaders/iluminacion_textura_animation_fog.vs", "../Shaders/multipleLights_fog.fs");
 	shaderTerrain.initialize("../Shaders/terrain_fog.vs", "../Shaders/terrain_fog.fs");
 	shaderParticlesFountain.initialize("../Shaders/particlesFountain.vs", "../Shaders/particlesFountain.fs");
+	// Crear un shader para particulas de fuego, {"Position", "Velocity", "Age"} Variables que vamos estar retroalimentando al programa
 	shaderParticlesFire.initialize("../Shaders/particlesFire.vs", "../Shaders/particlesFire.fs", {"Position", "Velocity", "Age"});
 
 	// Inicializacion de los objetos.
@@ -917,7 +926,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		std::cout << "Failed to load texture" << std::endl;
 	textureParticleFire.freeImage(bitmap);
 
-	std::uniform_real_distribution<float> distr01 = std::uniform_real_distribution<float>(0.0f, 1.0f);
+	// Se crean datos aleatorios en el plano XY para generar la posicion de las particulas
+	std::uniform_real_distribution<float> distr01 = std::uniform_real_distribution<float>(0.0f, 0.1f);
 	std::mt19937 generator;
 	std::random_device rd;
 	generator.seed(rd());
@@ -927,6 +937,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		randData[i] = distr01(generator);
 	}
 
+	// Los datos aleatorios se guardan en forma de una textura
 	glGenTextures(1, &texId);
 	glBindTexture(GL_TEXTURE_1D, texId);
 	glTexStorage1D(GL_TEXTURE_1D, 1, GL_R32F, size);
@@ -934,14 +945,23 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+	// Configurar el comportamiento de las particulas
+	// El paso 1 - Calcular la posicion, velocidad y edad de las particulas. 2 - Dibujar las particulas
 	shaderParticlesFire.setInt("Pass", 1);
+	// Unidad de textura
 	shaderParticlesFire.setInt("ParticleTex", 0);
+	// Unidad de textura de las posiciones aleatorias
 	shaderParticlesFire.setInt("RandomTex", 1);
+	// El ciclo de vida de la particula 3 s
 	shaderParticlesFire.setFloat("ParticleLifetime", particleLifetime);
+	// Tamaño que va a tener la particula
 	shaderParticlesFire.setFloat("ParticleSize", particleSize);
-	shaderParticlesFire.setVectorFloat3("Accel", glm::value_ptr(glm::vec3(0.0f,0.1f,0.0f)));
-	shaderParticlesFire.setVectorFloat3("Emitter", glm::value_ptr(glm::vec3(0.0f)));
+	// Aceleracion de la particula
+	shaderParticlesFire.setVectorFloat3("Accel", glm::value_ptr(glm::vec3(0.9f,0.1f,0.0f)));
+	// Offset de posicion en el eje Y
+	shaderParticlesFire.setVectorFloat3("Emitter", glm::value_ptr(glm::vec3(4.0f)));
 
+	// Offset de velocidad
 	glm::mat3 basis;
 	glm::vec3 u, v, n;
 	v = glm::vec3(0,1,0);
@@ -1680,17 +1700,23 @@ void applicationLoop() {
 				 * End Render particles systems
 				 */
 			}
+			// Renderizar el sistema de particulas de fuego
 			else if(it->second.first.compare("fire") == 0){
 				/**********
 				 * Init Render particles systems
 				 */
+				// Obtener el tiempo actual
 				lastTimeParticlesAnimationFire = currTimeParticlesAnimationFire;
 				currTimeParticlesAnimationFire = TimeManager::Instance().GetTime();
 
+				// Fase de actualizar la posicion, velocidad y edad del sistema de particulas. (Pass = 1)
 				shaderParticlesFire.setInt("Pass", 1);
+				// El tiempo de animacion del sistema de particulas
 				shaderParticlesFire.setFloat("Time", currTimeParticlesAnimationFire);
+				// El incremento de tiempo DeltaT
 				shaderParticlesFire.setFloat("DeltaT", currTimeParticlesAnimationFire - lastTimeParticlesAnimationFire);
 
+				// Llamar al shader para actualizar los buffers. Pass = 1
 				glActiveTexture(GL_TEXTURE1);
 				glBindTexture(GL_TEXTURE_1D, texId);
 				glEnable(GL_RASTERIZER_DISCARD);
@@ -1704,12 +1730,15 @@ void applicationLoop() {
 				glEndTransformFeedback();
 				glDisable(GL_RASTERIZER_DISCARD);
 
+				// Paso 2 Renderizar el sistema de particulas
 				shaderParticlesFire.setInt("Pass", 2);
+				// Enviar las transformaciones
 				glm::mat4 modelFireParticles = glm::mat4(1.0);
 				modelFireParticles = glm::translate(modelFireParticles, it->second.second);
 				modelFireParticles[3][1] = terrain.getHeightTerrain(modelFireParticles[3][0], modelFireParticles[3][2]);
 				shaderParticlesFire.setMatrix4("model", 1, false, glm::value_ptr(modelFireParticles));
 
+				// Render de las particulas
 				shaderParticlesFire.turnOn();
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, textureParticleFireID);

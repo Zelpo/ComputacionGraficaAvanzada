@@ -13,7 +13,7 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
-uniform float density = 0.008;
+uniform float density = 0.05;
 uniform float gradient = 1.5;
 
 void main(){

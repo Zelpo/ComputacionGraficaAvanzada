@@ -21,7 +21,7 @@ uniform int numBones;
 uniform vec2 scaleUV;
 uniform vec2 offsetX;
 
-uniform float density = 0.008;
+uniform float density = 0.05;
 uniform float gradient = 1.5;
 
 void main(){

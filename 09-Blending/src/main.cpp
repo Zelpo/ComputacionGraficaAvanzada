@@ -92,9 +92,13 @@ Model modelLamp2;
 Model modelLampPost2;
 // Hierba
 Model modelGrass;
+//Arbol
+Model modelArbol;
 // Model animate instance
 // Mayow
 Model mayowModelAnimate;
+// Model animate koyomi
+Model modelKoyomi;
 // Terrain model instance
 Terrain terrain(-1, -1, 200, 8, "../Textures/heightmap.png");
 
@@ -128,6 +132,7 @@ glm::mat4 modelMatrixLambo = glm::mat4(1.0);
 glm::mat4 modelMatrixAircraft = glm::mat4(1.0);
 glm::mat4 modelMatrixDart = glm::mat4(1.0f);
 glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
+glm::mat4 modelMatrixKoyomi = glm::mat4(1.0f);
 
 int animationIndex = 1;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
@@ -170,10 +175,17 @@ std::vector<glm::vec3> lamp2Position = { glm::vec3(-36.52, 0, -23.24),
 std::vector<float> lamp2Orientation = {21.37 + 90, -65.0 + 90};
 
 // Blending model unsorted
+// 1.- Dibujar todos los objetos de color sólido
+// 2.- Ordenar los objetos transparentes
+// 3.- Dibujar los objetos ordenados
+// Para dibujar los objetos vamos a considerar la distancia euclideana
 std::map<std::string, glm::vec3> blendingUnsorted = {
 		{"aircraft", glm::vec3(10.0, 0.0, -17.5)},
 		{"lambo", glm::vec3(23.0, 0.0, 0.0)},
-		{"heli", glm::vec3(5.0, 10.0, -5.0)}
+		{"heli", glm::vec3(5.0, 10.0, -5.0)},
+		{"grass", glm::vec3(6.0, 0.0, -2.0)},
+		{"arbol", glm::vec3(6.5, 0.0, -4.0)},
+		{"koyomi", glm::vec3(5.0, 0, 5.0f)}
 };
 
 double deltaTime;
@@ -330,9 +342,18 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	modelGrass.loadModel("../models/grass/grassModel.obj");
 	modelGrass.setShader(&shaderMulLighting);
 
+	//Arbol
+	modelArbol.loadModel("../models/arbol/arbol.obj");
+	modelArbol.setShader(&shaderMulLighting);
+
+
 	//Mayow
 	mayowModelAnimate.loadModel("../models/mayow/personaje2.fbx");
 	mayowModelAnimate.setShader(&shaderMulLighting);
+
+	//Koyomi
+	modelKoyomi.loadModel("../models/Koyomi/Koyomi.fbx");
+	modelKoyomi.setShader(&shaderMulLighting);
 
 	camera->setPosition(glm::vec3(0.0, 0.0, 10.0));
 	camera->setDistanceFromTarget(distanceFromTarget);
@@ -733,6 +754,8 @@ void destroy() {
 	modelLamp2.destroy();
 	modelLampPost2.destroy();
 	modelGrass.destroy();
+	modelArbol.destroy();
+	modelKoyomi.destroy();
 
 	// Custom objects animate
 	mayowModelAnimate.destroy();
@@ -817,8 +840,8 @@ bool processInput(bool continueApplication) {
 	if (enableCountSelected && glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS){
 		enableCountSelected = false;
 		modelSelected++;
-		if(modelSelected > 2)
-			modelSelected = 0;
+		if(modelSelected > 3)
+			modelSelected = 1;
 		if(modelSelected == 1)
 			fileName = "../animaciones/animation_dart_joints.txt";
 		if (modelSelected == 2)
@@ -917,6 +940,15 @@ bool processInput(bool continueApplication) {
 		animationIndex = 0;
 	}
 
+	if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+		modelMatrixKoyomi = glm::rotate(modelMatrixKoyomi, glm::radians(1.0f), glm::vec3(0, 1, 0));
+	else if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		modelMatrixKoyomi = glm::rotate(modelMatrixKoyomi, glm::radians(-1.0f), glm::vec3(0, 1, 0));
+	if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		modelMatrixKoyomi = glm::translate(modelMatrixKoyomi, glm::vec3(0, 0, 0.02));
+	else if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		modelMatrixKoyomi = glm::translate(modelMatrixKoyomi, glm::vec3(0, 0, -0.02));
+
 	glfwPollEvents();
 	return continueApplication;
 }
@@ -941,6 +973,8 @@ void applicationLoop() {
 
 	modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(13.0f, 0.05f, -5.0f));
 	modelMatrixMayow = glm::rotate(modelMatrixMayow, glm::radians(-90.0f), glm::vec3(0, 1, 0));
+
+	modelMatrixKoyomi = glm::translate(modelMatrixKoyomi, glm::vec3(5.0, 0, 5.0f));
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -976,10 +1010,15 @@ void applicationLoop() {
 			angleTarget = glm::angle(glm::quat_cast(modelMatrixDart));
 			target = modelMatrixDart[3];
 		}
-		else{
+		else if (modelSelected == 2) {
 			axis = glm::axis(glm::quat_cast(modelMatrixMayow));
 			angleTarget = glm::angle(glm::quat_cast(modelMatrixMayow));
 			target = modelMatrixMayow[3];
+		}
+		else if (modelSelected == 3) {
+			axis = glm::axis(glm::quat_cast(modelMatrixKoyomi));
+			angleTarget = glm::angle(glm::quat_cast(modelMatrixKoyomi));
+			target = modelMatrixKoyomi[3];
 		}
 
 		if(std::isnan(angleTarget))
@@ -1107,6 +1146,7 @@ void applicationLoop() {
 			shaderTerrain.setFloat("pointLights[" + std::to_string(lamp1Position.size() + i) + "].linear", 0.09);
 			shaderTerrain.setFloat("pointLights[" + std::to_string(lamp1Position.size() + i) + "].quadratic", 0.02);
 		}
+		glDepthFunc(GL_LESS);
 
 		/*******************************************
 		 * Terrain Cesped
@@ -1169,13 +1209,18 @@ void applicationLoop() {
 			modelLampPost2.render();
 		}
 
+		modelMatrixKoyomi[3][1] = terrain.getHeightTerrain(modelMatrixKoyomi[3][0], modelMatrixKoyomi[3][2]);
+		glm::mat4 modelMatrixKoyomiBody = glm::mat4(modelMatrixKoyomi);
+		modelMatrixKoyomiBody = glm::scale(modelMatrixKoyomi, glm::vec3(0.01, 0.01, 0.01));
+		modelKoyomi.render(modelMatrixKoyomiBody);
+
 		// Grass
-		glDisable(GL_CULL_FACE);
+		/*glDisable(GL_CULL_FACE);
 		glm::vec3 grassPosition = glm::vec3(0.0, 0.0, 0.0);
 		grassPosition.y = terrain.getHeightTerrain(grassPosition.x, grassPosition.z);
 		modelGrass.setPosition(grassPosition);
 		modelGrass.render();
-		glEnable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);*/
 
 		// Dart lego
 		// Se deshabilita el cull faces IMPORTANTE para la capa
@@ -1253,72 +1298,6 @@ void applicationLoop() {
 		skyboxSphere.render();
 		glCullFace(oldCullFaceMode);
 		glDepthFunc(oldDepthFuncMode);
-
-		/**********
-		 * Update the position with alpha objects
-		 */
-		// Update the aircraft
-		blendingUnsorted.find("aircraft")->second = glm::vec3(modelMatrixAircraft[3]);
-		// Update the lambo
-		blendingUnsorted.find("lambo")->second = glm::vec3(modelMatrixLambo[3]);
-		// Update the helicopter
-		blendingUnsorted.find("heli")->second = glm::vec3(modelMatrixHeli[3]);
-
-		/**********
-		 * Sorter with alpha objects
-		 */
-		std::map<float, std::pair<std::string, glm::vec3>> blendingSorted;
-		std::map<std::string, glm::vec3>::iterator itblend;
-		for(itblend = blendingUnsorted.begin(); itblend != blendingUnsorted.end(); itblend++){
-			float distanceFromView = glm::length(camera->getPosition() - itblend->second);
-			blendingSorted[distanceFromView] = std::make_pair(itblend->first, itblend->second);
-		}
-
-		/**********
-		 * Render de las transparencias
-		 */
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDisable(GL_CULL_FACE);
-		for(std::map<float, std::pair<std::string, glm::vec3> >::reverse_iterator it = blendingSorted.rbegin(); it != blendingSorted.rend(); it++){
-			if(it->second.first.compare("aircraft") == 0){
-				// Render for the aircraft model
-				glm::mat4 modelMatrixAircraftBlend = glm::mat4(modelMatrixAircraft);
-				modelMatrixAircraftBlend[3][1] = terrain.getHeightTerrain(modelMatrixAircraftBlend[3][0], modelMatrixAircraftBlend[3][2]) + 2.0;
-				modelAircraft.render(modelMatrixAircraftBlend);
-			}
-			else if(it->second.first.compare("lambo") == 0){
-				// Lambo car
-				glm::mat4 modelMatrixLamboBlend = glm::mat4(modelMatrixLambo);
-				modelMatrixLamboBlend[3][1] = terrain.getHeightTerrain(modelMatrixLamboBlend[3][0], modelMatrixLamboBlend[3][2]);
-				modelMatrixLamboBlend = glm::scale(modelMatrixLamboBlend, glm::vec3(1.3, 1.3, 1.3));
-				modelLambo.render(modelMatrixLamboBlend);
-				glActiveTexture(GL_TEXTURE0);
-				glm::mat4 modelMatrixLamboLeftDor = glm::mat4(modelMatrixLamboBlend);
-				modelMatrixLamboLeftDor = glm::translate(modelMatrixLamboLeftDor, glm::vec3(1.08676, 0.707316, 0.982601));
-				modelMatrixLamboLeftDor = glm::rotate(modelMatrixLamboLeftDor, glm::radians(dorRotCount), glm::vec3(1.0, 0, 0));
-				modelMatrixLamboLeftDor = glm::translate(modelMatrixLamboLeftDor, glm::vec3(-1.08676, -0.707316, -0.982601));
-				modelLamboLeftDor.render(modelMatrixLamboLeftDor);
-				modelLamboRightDor.render(modelMatrixLamboBlend);
-				modelLamboFrontLeftWheel.render(modelMatrixLamboBlend);
-				modelLamboFrontRightWheel.render(modelMatrixLamboBlend);
-				modelLamboRearLeftWheel.render(modelMatrixLamboBlend);
-				modelLamboRearRightWheel.render(modelMatrixLamboBlend);
-				// Se regresa el cull faces IMPORTANTE para las puertas
-			}
-			else if(it->second.first.compare("heli") == 0){
-				// Helicopter
-				glm::mat4 modelMatrixHeliChasis = glm::mat4(modelMatrixHeli);
-				modelHeliChasis.render(modelMatrixHeliChasis);
-
-				glm::mat4 modelMatrixHeliHeli = glm::mat4(modelMatrixHeliChasis);
-				modelMatrixHeliHeli = glm::translate(modelMatrixHeliHeli, glm::vec3(0.0, 0.0, -0.249548));
-				modelMatrixHeliHeli = glm::rotate(modelMatrixHeliHeli, rotHelHelY, glm::vec3(0, 1, 0));
-				modelMatrixHeliHeli = glm::translate(modelMatrixHeliHeli, glm::vec3(0.0, 0.0, 0.249548));
-				modelHeliHeli.render(modelMatrixHeliHeli);
-			}
-		}
-		glEnable(GL_CULL_FACE);
 
 		/*******************************************
 		 * Creacion de colliders
@@ -1410,6 +1389,17 @@ void applicationLoop() {
 		mayowCollider.c = glm::vec3(modelmatrixColliderMayow[3]);
 		addOrUpdateColliders(collidersOBB, "mayow", mayowCollider, modelMatrixMayow);
 
+		// Collider del Koyomi
+		AbstractModel::OBB koyomiCollider;
+		glm::mat4 modelMatrixColliderKoyomi = glm::mat4(modelMatrixKoyomi);
+		koyomiCollider.u = glm::quat_cast(modelMatrixKoyomi);
+		modelMatrixColliderKoyomi[3][1] = terrain.getHeightTerrain(modelMatrixColliderKoyomi[3][0], modelMatrixColliderKoyomi[3][2]);
+		modelMatrixColliderKoyomi = glm::scale(modelMatrixColliderKoyomi, glm::vec3(0.01, 0.01, 0.01));
+		modelMatrixColliderKoyomi = glm::translate(modelMatrixColliderKoyomi, modelKoyomi.getObb().c);
+		koyomiCollider.c = glm::vec3(modelMatrixColliderKoyomi[3]);
+		koyomiCollider.e = modelKoyomi.getObb().e * glm::vec3(0.01, 0.01, 0.01);
+		addOrUpdateColliders(collidersOBB, "koyomi", koyomiCollider, modelMatrixKoyomi);
+
 		/*******************************************
 		 * Render de colliders
 		 *******************************************/
@@ -1433,6 +1423,101 @@ void applicationLoop() {
 			sphereCollider.enableWireMode();
 			sphereCollider.render(matrixCollider);
 		}
+
+		/**********
+		 * Update the position with alpha objects
+		 */
+		 // Update the aircraft
+		blendingUnsorted.find("aircraft")->second = glm::vec3(modelMatrixAircraft[3]);
+		// Update the lambo
+		blendingUnsorted.find("lambo")->second = glm::vec3(modelMatrixLambo[3]);
+		// Update the helicopter
+		blendingUnsorted.find("heli")->second = glm::vec3(modelMatrixHeli[3]);
+		// Update the grass
+		glm::vec3 grassPosition = blendingUnsorted.find("grass")->second;
+		grassPosition[1] = terrain.getHeightTerrain(grassPosition[0], grassPosition[2]);
+		blendingUnsorted.find("grass")->second = grassPosition;
+		// Update the tree
+		glm::vec3 arbolPosition = blendingUnsorted.find("arbol")->second;
+		arbolPosition[1] = terrain.getHeightTerrain(arbolPosition[0], arbolPosition[2]);
+		blendingUnsorted.find("arbol")->second = arbolPosition;
+		// Update the koyomi
+		glm::vec3 koyomiPosition = blendingUnsorted.find("koyomi")->second;
+		koyomiPosition[1] = terrain.getHeightTerrain(koyomiPosition[0], koyomiPosition[2]);
+		blendingUnsorted.find("koyomi")->second = koyomiPosition;
+
+		/**********
+		 * Sorter with alpha objects
+		 */
+		std::map<float, std::pair<std::string, glm::vec3>> blendingSorted;
+		std::map<std::string, glm::vec3>::iterator itblend;
+		for (itblend = blendingUnsorted.begin(); itblend != blendingUnsorted.end(); itblend++) {
+			float distanceFromView = glm::length(camera->getPosition() - itblend->second);
+			blendingSorted[distanceFromView] = std::make_pair(itblend->first, itblend->second);
+		}
+
+		/**********
+		 * Render de las transparencias
+		 */
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		for (std::map<float, std::pair<std::string, glm::vec3> >::reverse_iterator it = blendingSorted.rbegin(); it != blendingSorted.rend(); it++) {
+			if (it->second.first.compare("aircraft") == 0) {
+				// Render for the aircraft model
+				glm::mat4 modelMatrixAircraftBlend = glm::mat4(modelMatrixAircraft);
+				modelMatrixAircraftBlend[3][1] = terrain.getHeightTerrain(modelMatrixAircraftBlend[3][0], modelMatrixAircraftBlend[3][2]) + 2.0;
+				modelAircraft.render(modelMatrixAircraftBlend);
+			}
+			else if (it->second.first.compare("lambo") == 0) {
+				// Lambo car
+				glm::mat4 modelMatrixLamboBlend = glm::mat4(modelMatrixLambo);
+				modelMatrixLamboBlend[3][1] = terrain.getHeightTerrain(modelMatrixLamboBlend[3][0], modelMatrixLamboBlend[3][2]);
+				modelMatrixLamboBlend = glm::scale(modelMatrixLamboBlend, glm::vec3(1.3, 1.3, 1.3));
+				modelLambo.render(modelMatrixLamboBlend);
+				glActiveTexture(GL_TEXTURE0);
+				glm::mat4 modelMatrixLamboLeftDor = glm::mat4(modelMatrixLamboBlend);
+				modelMatrixLamboLeftDor = glm::translate(modelMatrixLamboLeftDor, glm::vec3(1.08676, 0.707316, 0.982601));
+				modelMatrixLamboLeftDor = glm::rotate(modelMatrixLamboLeftDor, glm::radians(dorRotCount), glm::vec3(1.0, 0, 0));
+				modelMatrixLamboLeftDor = glm::translate(modelMatrixLamboLeftDor, glm::vec3(-1.08676, -0.707316, -0.982601));
+				modelLamboLeftDor.render(modelMatrixLamboLeftDor);
+				modelLamboRightDor.render(modelMatrixLamboBlend);
+				modelLamboFrontLeftWheel.render(modelMatrixLamboBlend);
+				modelLamboFrontRightWheel.render(modelMatrixLamboBlend);
+				modelLamboRearLeftWheel.render(modelMatrixLamboBlend);
+				modelLamboRearRightWheel.render(modelMatrixLamboBlend);
+				// Se regresa el cull faces IMPORTANTE para las puertas
+			}
+			else if (it->second.first.compare("heli") == 0) {
+				// Helicopter
+				glm::mat4 modelMatrixHeliChasis = glm::mat4(modelMatrixHeli);
+				modelHeliChasis.render(modelMatrixHeliChasis);
+
+				glm::mat4 modelMatrixHeliHeli = glm::mat4(modelMatrixHeliChasis);
+				modelMatrixHeliHeli = glm::translate(modelMatrixHeliHeli, glm::vec3(0.0, 0.0, -0.249548));
+				modelMatrixHeliHeli = glm::rotate(modelMatrixHeliHeli, rotHelHelY, glm::vec3(0, 1, 0));
+				modelMatrixHeliHeli = glm::translate(modelMatrixHeliHeli, glm::vec3(0.0, 0.0, 0.249548));
+				modelHeliHeli.render(modelMatrixHeliHeli);
+			}
+			else if (it->second.first.compare("grass") == 0) {
+				modelGrass.setPosition(it->second.second);
+				modelGrass.render();
+			}
+			else if (it->second.first.compare("arbol") == 0) {
+				// Arbol
+				modelArbol.setPosition(it->second.second);
+				modelArbol.render();
+			}
+			else if (it->second.first.compare("koyomi") == 0) {
+				glm::mat4 modelMatrixKoyomiBlend = glm::mat4(modelMatrixKoyomi);
+				modelMatrixKoyomiBlend[3][1] = terrain.getHeightTerrain(modelMatrixKoyomiBlend[3][0], modelMatrixKoyomiBlend[3][2]);
+				modelMatrixKoyomiBlend = glm::scale(modelMatrixKoyomiBlend, glm::vec3(0.01, 0.01, 0.01));
+				modelKoyomi.setPosition(it->second.second);
+				modelKoyomi.render(modelMatrixKoyomiBlend);
+			}
+		}
+		glDisable(GL_BLEND);
+		glEnable(GL_CULL_FACE);
 
 		// Esto es para ilustrar la transformacion inversa de los coliders
 		/*glm::vec3 cinv = glm::inverse(mayowCollider.u) * glm::vec4(rockCollider.c, 1.0);
@@ -1533,6 +1618,8 @@ void applicationLoop() {
 						modelMatrixMayow = std::get<1>(jt->second);
 					if (jt->first.compare("dart") == 0)
 						modelMatrixDart = std::get<1>(jt->second);
+					if (jt->first.compare("koyomi") == 0)
+						modelMatrixKoyomi = std::get<1>(jt->second);
 				}
 			}
 		}

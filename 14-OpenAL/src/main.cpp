@@ -46,7 +46,7 @@
 // Include Colision headers functions
 #include "Headers/Colisiones.h"
 
-// ShadowBox include
+// Shadow box include
 #include "Headers/ShadowBox.h"
 
 // OpenAL include
@@ -238,8 +238,8 @@ GLuint depthMap, depthMapFBO;
  */
 
 // OpenAL Defines
-#define NUM_BUFFERS 3
-#define NUM_SOURCES 3
+#define NUM_BUFFERS 4
+#define NUM_SOURCES 4
 #define NUM_ENVIRONMENTS 1
 // Listener
 ALfloat listenerPos[] = { 0.0, 0.0, 4.0 };
@@ -254,6 +254,9 @@ ALfloat source1Vel[] = { 0.0, 0.0, 0.0 };
 // Source 2
 ALfloat source2Pos[] = { 2.0, 0.0, 0.0 };
 ALfloat source2Vel[] = { 0.0, 0.0, 0.0 };
+// Source 3
+ALfloat source3Pos[] = { 0.0, 0.0, 0.0 };
+ALfloat source3Vel[] = { 0.0, 0.0, 0.0 };
 // Buffers
 ALuint buffer[NUM_BUFFERS];
 ALuint source[NUM_SOURCES];
@@ -264,7 +267,7 @@ ALenum format;
 ALvoid *data;
 int ch;
 ALboolean loop;
-std::vector<bool> sourcesPlay = {true, true, true};
+std::vector<bool> sourcesPlay = {true, true, true, true};
 
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
@@ -1072,6 +1075,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	buffer[0] = alutCreateBufferFromFile("../sounds/fountain.wav");
 	buffer[1] = alutCreateBufferFromFile("../sounds/fire.wav");
 	buffer[2] = alutCreateBufferFromFile("../sounds/darth_vader.wav");
+	buffer[3] = alutCreateBufferFromFile("../sounds/car_acel.wav");
 	int errorAlut = alutGetError();
 	if (errorAlut != ALUT_ERROR_NO_ERROR){
 		printf("- Error open files with alut %d !!\n", errorAlut);
@@ -1112,6 +1116,14 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	alSourcei(source[2], AL_BUFFER, buffer[2]);
 	alSourcei(source[2], AL_LOOPING, AL_TRUE);
 	alSourcef(source[2], AL_MAX_DISTANCE, 500);
+
+	alSourcef(source[3], AL_PITCH, 1.0f);
+	alSourcef(source[3], AL_GAIN, 1.0f);
+	alSourcefv(source[3], AL_POSITION, source3Pos);
+	alSourcefv(source[3], AL_VELOCITY, source3Vel);
+	alSourcei(source[3], AL_BUFFER, buffer[3]);
+	alSourcei(source[3], AL_LOOPING, AL_TRUE);
+	alSourcef(source[3], AL_MAX_DISTANCE, 500);
 }
 
 void destroy() {
@@ -1133,7 +1145,6 @@ void destroy() {
 	boxCollider.destroy();
 	sphereCollider.destroy();
 	boxViewDepth.destroy();
-	boxLightViewBox.destroy();
 
 	// Terrains objects Delete
 	terrain.destroy();
@@ -1412,7 +1423,8 @@ void applicationLoop() {
 
 	glm::vec3 lightPos = glm::vec3(10.0, 10.0, 0.0);
 
-	shadowBox = new ShadowBox(-lightPos, camera.get(), 15.0f, 0.1f, 45.0f);
+	// Posicion light, apuntador a la camara, distancia maximo de alcance, plano cercano y el FOV (Field of view)
+	shadowBox = new ShadowBox(-lightPos, camera.get(), 15.0f, 0.1, 45.0f);
 
 	while (psi) {
 		currTime = TimeManager::Instance().GetTime();
@@ -1456,20 +1468,24 @@ void applicationLoop() {
 		camera->updateCamera();
 		view = camera->getViewMatrix();
 
+		// Se actualiza la caja usando las dimensiones del viewport
 		shadowBox->update(screenWidth, screenHeight);
-		glm::vec3 centerBox = shadowBox->getCenter();
+		shadowBox->getCenter();
 
 		// Projection light shadow mapping
-		glm::mat4 lightProjection = glm::mat4(1.0f), lightView = glm::mat4(1.0f);
+		//glm::mat4 lightProjection, lightView;
+		//glm::mat4 lightSpaceMatrix;
+		//float near_plane = 0.1f, far_plane = 20.0f;
+		////lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
+		//lightProjection = glm::ortho(-25.0f, 25.0f, -25.0f, 25.0f, near_plane, far_plane);
+		//lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+		glm::mat4 lightProjection = glm::mat4(1.0), lightView = glm::mat4(1.0f);
 		glm::mat4 lightSpaceMatrix;
-
-		lightProjection[0][0] = 2.0f / shadowBox->getWidth();
-		lightProjection[1][1] = 2.0f / shadowBox->getHeight();
-		lightProjection[2][2] = -2.0f / shadowBox->getLength();
-		lightProjection[3][3] = 1.0f;
-
-		lightView = glm::lookAt(centerBox, centerBox + glm::normalize(-lightPos), glm::vec3(0.0, 1.0, 0.0));
-
+		lightProjection[0][0] = 2.0 / shadowBox->getWidth();
+		lightProjection[1][1] = 2.0 / shadowBox->getHeight();
+		lightProjection[2][2] = -2.0 / shadowBox->getLength();
+		lightProjection[3][3] = 1.0;
+		lightView = glm::lookAt(shadowBox->getCenter(), shadowBox->getCenter() + glm::normalize(-lightPos), glm::vec3(0, 1.0f, 0));
 		lightSpaceMatrix = lightProjection * lightView;
 		shaderDepth.setMatrix4("lightSpaceMatrix", 1, false, glm::value_ptr(lightSpaceMatrix));
 
@@ -1994,6 +2010,11 @@ void applicationLoop() {
 		source2Pos[1] = modelMatrixDart[3].y;
 		source2Pos[2] = modelMatrixDart[3].z;
 		alSourcefv(source[2], AL_POSITION, source2Pos);
+
+		source3Pos[0] = modelMatrixLambo[3].x;
+		source3Pos[1] = modelMatrixLambo[3].y;
+		source3Pos[2] = modelMatrixLambo[3].z;
+		alSourcefv(source[3], AL_POSITION, source3Pos);
 
 		// Listener for the Thris person camera
 		listenerPos[0] = modelMatrixMayow[3].x;

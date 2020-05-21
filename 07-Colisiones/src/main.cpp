@@ -93,6 +93,10 @@ Model modelLampPost2;
 // Model animate instance
 // Mayow
 Model mayowModelAnimate;
+// Model animate nanosuit
+Model nanosuitModel;
+// Model animate koyomi
+Model modelKoyomi;
 // Terrain model instance
 Terrain terrain(-1, -1, 200, 8, "../Textures/heightmap.png");
 
@@ -126,6 +130,8 @@ glm::mat4 modelMatrixLambo = glm::mat4(1.0);
 glm::mat4 modelMatrixAircraft = glm::mat4(1.0);
 glm::mat4 modelMatrixDart = glm::mat4(1.0f);
 glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
+glm::mat4 modelMatrixNanosuit = glm::mat4(1.0f);
+glm::mat4 modelMatrixKoyomi = glm::mat4(1.0f);
 
 int animationIndex = 1;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
@@ -320,6 +326,14 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	//Mayow
 	mayowModelAnimate.loadModel("../models/mayow/personaje2.fbx");
 	mayowModelAnimate.setShader(&shaderMulLighting);
+
+	//Nanosuit
+	nanosuitModel.loadModel("../models/nanosuit/nanosuit.obj");
+	nanosuitModel.setShader(&shaderMulLighting);
+
+	//Koyomi
+	modelKoyomi.loadModel("../models/Koyomi/Koyomi.fbx");
+	modelKoyomi.setShader(&shaderMulLighting);
 
 	camera->setPosition(glm::vec3(0.0, 0.0, 10.0));
 	camera->setDistanceFromTarget(distanceFromTarget);
@@ -719,6 +733,8 @@ void destroy() {
 	modelLamp1.destroy();
 	modelLamp2.destroy();
 	modelLampPost2.destroy();
+	nanosuitModel.destroy();
+	modelKoyomi.destroy();
 
 	// Custom objects animate
 	mayowModelAnimate.destroy();
@@ -792,93 +808,93 @@ bool processInput(bool continueApplication) {
 		return false;
 	}
 
-	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 		camera->mouseMoveCamera(offsetX, 0.0, deltaTime);
-	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 		camera->mouseMoveCamera(0.0, offsetY, deltaTime);
 	offsetX = 0;
 	offsetY = 0;
 
 	// Seleccionar modelo
-	if (enableCountSelected && glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS){
+	if (enableCountSelected && glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
 		enableCountSelected = false;
 		modelSelected++;
-		if(modelSelected > 2)
-			modelSelected = 0;
-		if(modelSelected == 1)
+		if (modelSelected > 5)
+			modelSelected = 1;
+		if (modelSelected == 1)
 			fileName = "../animaciones/animation_dart_joints.txt";
 		if (modelSelected == 2)
 			fileName = "../animaciones/animation_dart.txt";
 		std::cout << "modelSelected:" << modelSelected << std::endl;
 	}
-	else if(glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE)
+	else if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE)
 		enableCountSelected = true;
 
 	// Guardar key frames
-	if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
-			&& glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS){
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
+		&& glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
 		record = true;
-		if(myfile.is_open())
+		if (myfile.is_open())
 			myfile.close();
 		myfile.open(fileName);
 	}
-	if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE
-			&& glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS){
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE
+		&& glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
 		record = false;
 		myfile.close();
-		if(modelSelected == 1)
+		if (modelSelected == 1)
 			keyFramesDartJoints = getKeyRotFrames(fileName);
 		if (modelSelected == 2)
 			keyFramesDart = getKeyFrames(fileName);
 	}
-	if(availableSave && glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS){
+	if (availableSave && glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
 		saveFrame = true;
 		availableSave = false;
-	}if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_RELEASE)
+	}if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_RELEASE)
 		availableSave = true;
 
 	// Dart Lego model movements
 	if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE &&
-			glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 		rotDartHead += 0.02;
 	else if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
-			glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 		rotDartHead -= 0.02;
 	if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE &&
-			glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
 		rotDartLeftArm += 0.02;
 	else if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
-			glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
 		rotDartLeftArm -= 0.02;
 	if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE &&
-			glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
 		rotDartRightArm += 0.02;
 	else if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
-			glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
 		rotDartRightArm -= 0.02;
 	if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE &&
-			glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
 		rotDartLeftHand += 0.02;
 	else if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
-			glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
 		rotDartLeftHand -= 0.02;
 	if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE &&
-			glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
 		rotDartRightHand += 0.02;
 	else if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
-			glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
 		rotDartRightHand -= 0.02;
 	if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE &&
-			glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
 		rotDartLeftLeg += 0.02;
 	else if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
-			glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
 		rotDartLeftLeg -= 0.02;
 	if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE &&
-			glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS)
 		rotDartRightLeg += 0.02;
 	else if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
-			glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS)
+		glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS)
 		rotDartRightLeg -= 0.02;
 	if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 		modelMatrixDart = glm::rotate(modelMatrixDart, 0.02f, glm::vec3(0, 1, 0));
@@ -889,19 +905,45 @@ bool processInput(bool continueApplication) {
 	else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 		modelMatrixDart = glm::translate(modelMatrixDart, glm::vec3(0.02, 0.0, 0.0));
 
-	if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+	if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		modelMatrixMayow = glm::rotate(modelMatrixMayow, glm::radians(1.0f), glm::vec3(0, 1, 0));
 		animationIndex = 0;
-	}else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+	}
+	else if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		modelMatrixMayow = glm::rotate(modelMatrixMayow, glm::radians(-1.0f), glm::vec3(0, 1, 0));
 		animationIndex = 0;
-	}if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+	}if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
 		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0, 0, 0.02));
 		animationIndex = 0;
-	}else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+	}
+	else if (modelSelected == 3 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
 		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0, 0, -0.02));
 		animationIndex = 0;
 	}
+
+	if (modelSelected == 4 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+		modelMatrixLambo = glm::translate(modelMatrixLambo, glm::vec3(0, 0, 2));
+		modelMatrixLambo = glm::rotate(modelMatrixLambo, glm::radians(1.0f), glm::vec3(0, 1, 0));
+		modelMatrixLambo = glm::translate(modelMatrixLambo, glm::vec3(0, 0, -2));
+	}
+	else if (modelSelected == 4 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+		modelMatrixLambo = glm::translate(modelMatrixLambo, glm::vec3(0, 0, 2));
+		modelMatrixLambo = glm::rotate(modelMatrixLambo, glm::radians(-1.0f), glm::vec3(0, 1, 0));
+		modelMatrixLambo = glm::translate(modelMatrixLambo, glm::vec3(0, 0, -2));
+	}
+	if (modelSelected == 4 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		modelMatrixLambo = glm::translate(modelMatrixLambo, glm::vec3(0, 0, 0.02));
+	else if (modelSelected == 4 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		modelMatrixLambo = glm::translate(modelMatrixLambo, glm::vec3(0, 0, -0.02));
+
+	if (modelSelected == 5 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+		modelMatrixKoyomi = glm::rotate(modelMatrixKoyomi, glm::radians(1.0f), glm::vec3(0, 1, 0));
+	else if (modelSelected == 5 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		modelMatrixKoyomi = glm::rotate(modelMatrixKoyomi, glm::radians(-1.0f), glm::vec3(0, 1, 0));
+	if (modelSelected == 5 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		modelMatrixKoyomi = glm::translate(modelMatrixKoyomi, glm::vec3(0, 0, 0.02));
+	else if (modelSelected == 5 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		modelMatrixKoyomi = glm::translate(modelMatrixKoyomi, glm::vec3(0, 0, -0.02));
 
 	glfwPollEvents();
 	return continueApplication;
@@ -927,6 +969,10 @@ void applicationLoop() {
 
 	modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(13.0f, 0.05f, -5.0f));
 	modelMatrixMayow = glm::rotate(modelMatrixMayow, glm::radians(-90.0f), glm::vec3(0, 1, 0));
+
+	modelMatrixNanosuit = glm::translate(modelMatrixNanosuit, glm::vec3(13.0, 0, 10.0f));
+
+	modelMatrixKoyomi = glm::translate(modelMatrixKoyomi, glm::vec3(5.0, 0, 5.0f));
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -957,15 +1003,25 @@ void applicationLoop() {
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
 				(float) screenWidth / (float) screenHeight, 0.01f, 100.0f);
 
-		if(modelSelected == 1){
+		if(modelSelected == 1 || modelSelected == 2){
 			axis = glm::axis(glm::quat_cast(modelMatrixDart));
 			angleTarget = glm::angle(glm::quat_cast(modelMatrixDart));
 			target = modelMatrixDart[3];
 		}
-		else{
+		else if(modelSelected == 3){
 			axis = glm::axis(glm::quat_cast(modelMatrixMayow));
 			angleTarget = glm::angle(glm::quat_cast(modelMatrixMayow));
 			target = modelMatrixMayow[3];
+		}
+		else if (modelSelected == 4) {
+			axis = glm::axis(glm::quat_cast(modelMatrixLambo));
+			angleTarget = glm::angle(glm::quat_cast(modelMatrixLambo));
+			target = modelMatrixLambo[3];
+		}
+		else if (modelSelected == 5) {
+			axis = glm::axis(glm::quat_cast(modelMatrixKoyomi));
+			angleTarget = glm::angle(glm::quat_cast(modelMatrixKoyomi));
+			target = modelMatrixKoyomi[3];
 		}
 
 		if(std::isnan(angleTarget))
@@ -1189,6 +1245,16 @@ void applicationLoop() {
 			modelLampPost2.render();
 		}
 
+		modelMatrixNanosuit[3][1] = terrain.getHeightTerrain(modelMatrixNanosuit[3][0], modelMatrixNanosuit[3][2]);
+		glm::mat4 modelMatrixNanosuitBody = glm::mat4(modelMatrixNanosuit);
+		modelMatrixNanosuitBody = glm::scale(modelMatrixNanosuit, glm::vec3(0.15, 0.15, 0.15));
+		nanosuitModel.render(modelMatrixNanosuitBody);
+
+		modelMatrixKoyomi[3][1] = terrain.getHeightTerrain(modelMatrixKoyomi[3][0], modelMatrixKoyomi[3][2]);
+		glm::mat4 modelMatrixKoyomiBody = glm::mat4(modelMatrixKoyomi);
+		modelMatrixKoyomiBody = glm::scale(modelMatrixKoyomi, glm::vec3(0.01, 0.01, 0.01));
+		modelKoyomi.render(modelMatrixKoyomiBody);
+
 		// Dart lego
 		// Se deshabilita el cull faces IMPORTANTE para la capa
 		glDisable(GL_CULL_FACE);
@@ -1297,6 +1363,20 @@ void applicationLoop() {
 		aircraftCollider.e = modelAircraft.getObb().e * glm::vec3(1.0, 1.0, 1.0);
 		addOrUpdateColliders(collidersOBB, "aircraft", aircraftCollider, modelMatrixAircraft);
 
+		// Collider del lambo
+		// El objetivo es crear un objeto de tipo collider AbstractModel::OBB, el cual tiene las propiedades siguientes:
+		// c: Centro de la caja, e: Medias dimensiones de las aristas, u: Orientación en forma de quaternion
+		glm::mat4 modelMatrixColliderLambo = glm::mat4(modelMatrixLambo);
+		AbstractModel::OBB lamboCollider;
+		lamboCollider.u = glm::quat_cast(modelMatrixLambo);
+		modelMatrixColliderLambo[3][1] = terrain.getHeightTerrain(modelMatrixColliderLambo[3][0], modelMatrixColliderLambo[3][2]);
+		modelMatrixColliderLambo = glm::scale(modelMatrixColliderLambo, glm::vec3(1.3, 1.3, 1.3));
+		modelMatrixColliderLambo = glm::translate(modelMatrixColliderLambo, modelLambo.getObb().c);
+		lamboCollider.c = glm::vec3(modelMatrixColliderLambo[3]);
+		lamboCollider.e = modelLambo.getObb().e * glm::vec3(1.3, 1.3, 1.3);
+		// 1.- Arreglo de colliders, 2.- Etiqueta, 3.- Collider que creamos, 4.- Matrix Transformación Original
+		addOrUpdateColliders(collidersOBB, "lambo", lamboCollider, modelMatrixLambo);
+
 		//Collider del la rock
 		AbstractModel::SBB rockCollider;
 		glm::mat4 modelMatrixColliderRock= glm::mat4(matrixModelRock);
@@ -1340,6 +1420,34 @@ void applicationLoop() {
 			std::get<0>(collidersOBB.find("lamp2-" + std::to_string(i))->second) = lampCollider;
 		}
 
+		// Collider del Nanosuit
+		AbstractModel::SBB nanosuitCollider;
+		glm::mat4 modelMatrixColliderNanosuit = glm::mat4(modelMatrixNanosuit);
+		modelMatrixColliderNanosuit = glm::scale(modelMatrixColliderNanosuit, glm::vec3(0.15, 0.15, 0.15));
+		modelMatrixColliderNanosuit = glm::translate(modelMatrixColliderNanosuit, nanosuitModel.getSbb().c);
+		nanosuitCollider.c = glm::vec3(modelMatrixColliderNanosuit[3]);
+		nanosuitCollider.ratio = nanosuitModel.getSbb().ratio * 0.15;
+		addOrUpdateColliders(collidersSBB, "nanosuit", nanosuitCollider, modelMatrixNanosuit);
+
+		/*AbstractModel::OBB nanosuitColliderOBB;
+		glm::mat4 modelMatrixColliderNanosuitOBB = glm::mat4(modelMatrixNanosuit);
+		nanosuitColliderOBB.u = glm::quat_cast(modelMatrixNanosuit);
+		modelMatrixColliderNanosuitOBB[3][1] = terrain.getHeightTerrain(modelMatrixColliderNanosuitOBB[3][0], modelMatrixColliderNanosuitOBB[3][2]);
+		modelMatrixColliderNanosuitOBB = glm::scale(modelMatrixColliderNanosuitOBB, glm::vec3(0.15, 0.15, 0.15));
+		modelMatrixColliderNanosuitOBB = glm::translate(modelMatrixColliderNanosuitOBB, nanosuitModel.getObb().c);
+		nanosuitColliderOBB.c = glm::vec3(modelMatrixColliderNanosuitOBB[3]);
+		nanosuitColliderOBB.e = nanosuitModel.getObb().e * glm::vec3(0.15, 0.15, 0.15);
+		addOrUpdateColliders(collidersOBB, "nanosuitobb", nanosuitColliderOBB, modelMatrixNanosuit);*/
+
+		// Collider del Koyomi
+		AbstractModel::SBB koyomiCollider;
+		glm::mat4 modelMatrixColliderKoyomi = glm::mat4(modelMatrixKoyomi);
+		modelMatrixColliderKoyomi = glm::scale(modelMatrixColliderKoyomi, glm::vec3(0.01, 0.01, 0.01));
+		modelMatrixColliderKoyomi = glm::translate(modelMatrixColliderKoyomi, modelKoyomi.getSbb().c);
+		koyomiCollider.c = glm::vec3(modelMatrixColliderKoyomi[3]);
+		koyomiCollider.ratio = modelKoyomi.getSbb().ratio * 0.01;
+		addOrUpdateColliders(collidersSBB, "koyomi", koyomiCollider, modelMatrixKoyomi);
+
 		// Collider de mayow
 		AbstractModel::OBB mayowCollider;
 		glm::mat4 modelmatrixColliderMayow = glm::mat4(modelMatrixMayow);
@@ -1381,24 +1489,24 @@ void applicationLoop() {
 		}
 
 		// Esto es para ilustrar la transformacion inversa de los coliders
-		/*glm::vec3 cinv = glm::inverse(mayowCollider.u) * glm::vec4(rockCollider.c, 1.0);
-		glm::mat4 invColliderS = glm::mat4(1.0);
-		invColliderS = glm::translate(invColliderS, cinv);
-		invColliderS =  invColliderS * glm::mat4(mayowCollider.u);
-		invColliderS = glm::scale(invColliderS, glm::vec3(rockCollider.ratio * 2.0, rockCollider.ratio * 2.0, rockCollider.ratio * 2.0));
-		sphereCollider.setColor(glm::vec4(1.0, 1.0, 0.0, 1.0));
-		sphereCollider.enableWireMode();
-		sphereCollider.render(invColliderS);
-		glm::vec3 cinv2 = glm::inverse(mayowCollider.u) * glm::vec4(mayowCollider.c, 1.0);
-		glm::mat4 invColliderB = glm::mat4(1.0);
-		invColliderB = glm::translate(invColliderB, cinv2);
-		invColliderB = glm::scale(invColliderB, mayowCollider.e * 2.0f);
-		boxCollider.setColor(glm::vec4(1.0, 1.0, 0.0, 1.0));
-		boxCollider.enableWireMode();
-		boxCollider.render(invColliderB);
-		// Se regresa el color blanco
-		sphereCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
-		boxCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));*/
+		//glm::vec3 cinv = glm::inverse(mayowCollider.u) * glm::vec4(rockCollider.c, 1.0);
+		//glm::mat4 invColliderS = glm::mat4(1.0);
+		//invColliderS = glm::translate(invColliderS, cinv);
+		//invColliderS =  invColliderS * glm::mat4(mayowCollider.u);
+		//invColliderS = glm::scale(invColliderS, glm::vec3(rockCollider.ratio * 2.0, rockCollider.ratio * 2.0, rockCollider.ratio * 2.0));
+		//sphereCollider.setColor(glm::vec4(1.0, 1.0, 0.0, 1.0));
+		//sphereCollider.enableWireMode();
+		//sphereCollider.render(invColliderS);
+		//glm::vec3 cinv2 = glm::inverse(mayowCollider.u) * glm::vec4(mayowCollider.c, 1.0);
+		//glm::mat4 invColliderB = glm::mat4(1.0);
+		//invColliderB = glm::translate(invColliderB, cinv2);
+		//invColliderB = glm::scale(invColliderB, mayowCollider.e * 2.0f);
+		//boxCollider.setColor(glm::vec4(1.0, 1.0, 0.0, 1.0));
+		//boxCollider.enableWireMode();
+		//boxCollider.render(invColliderB);
+		//// Se regresa el color blanco
+		//sphereCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
+		//boxCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
 
 		/*******************************************
 		 * Test Colisions
@@ -1479,6 +1587,8 @@ void applicationLoop() {
 						modelMatrixMayow = std::get<1>(jt->second);
 					if (jt->first.compare("dart") == 0)
 						modelMatrixDart = std::get<1>(jt->second);
+					if (jt->first.compare("lambo") == 0)
+						modelMatrixLambo = std::get<1>(jt->second);
 				}
 			}
 		}
